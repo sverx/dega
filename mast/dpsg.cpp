@@ -74,26 +74,11 @@ void DpsgWrite(unsigned char d)
 {
   MastSoundUpdate(); // Update sound up to here
   VgmPsg(d); // Write to disk
-  if ((Dpsg.Last&0x90)==0x80)
-  {
-    // 1cc0pppp PPPPPPPPP : Set Channel Pitch
-    int c=(Dpsg.Last>>5)&3;
-    Dpsg.Period[c]&=0x00f; Dpsg.Period[c]|=d<<4; // Keep low bits and set high bits
-    RecalcAdd(c);
-  }
-
-  if ((d&0x90)==0x80)
-  {
-    // 1cc0pppp
-    int c=(d>>5)&3;
-    Dpsg.Period[c]&=0xff0; Dpsg.Period[c]|=d&15;// Keep high bits and set low bits
-    RecalcAdd(c);
-
-    if (c==3) Noise=1; // Reset noise seed
-  }
 
   if ((d&0x90)==0x90)
   {
+    Dpsg.Last=d; // Store current byte
+
     // 1cc1vvvv : Set Channel Volume
     int c; unsigned char v; c=(d>>5)&3; v=(unsigned char)((~d)&15);
     if (v>Dpsg.Volume[c]+2)
@@ -101,8 +86,37 @@ void DpsgWrite(unsigned char d)
     Dpsg.Volume[c]=v;
     RecalcVol(c);
   }
+  else
+  if ((d&0x90)==0x80)
+  {
+    Dpsg.Last=d; // Store current byte
 
-  Dpsg.Last=d; // Store current byte (in case of a two byte command)
+    // 1cc0pppp
+    int c=(d>>5)&3;
+    Dpsg.Period[c]&=0xff0; Dpsg.Period[c]|=d&15;// Keep high bits and set low bits
+    RecalcAdd(c);
+
+    if (c==3) Noise=1; // Reset noise seed
+  }
+  else
+  {
+    if (Dpsg.Last&0x10)
+    {
+      // 0---vvvv : Set Channel Volume
+      int c; unsigned char v; c=(Dpsg.Last>>5)&3; v=(unsigned char)((~d)&15);
+      if (v>Dpsg.Volume[c]+2)
+      { Chan[c].pSam=NULL; RecalcAdd(c); } // Louder: it's likely this is a new note
+      Dpsg.Volume[c]=v;
+      RecalcVol(c);
+    }
+    else
+    {
+      // 0-PPPPPP : Set Channel Pitch (high bits)
+      int c=(Dpsg.Last>>5)&3;
+      Dpsg.Period[c]&=0x00f; Dpsg.Period[c]|=(d&0x3f)<<4; // Keep low bits and set high bits
+      RecalcAdd(c);
+    }
+  }
 }
 
 void DpsgStereo(unsigned char d)
@@ -199,6 +213,6 @@ void DpsgCalc(int *Total)
     }
   }
 
-  // Return values    
+  // Return values
   Total[0]+=Left; Total[1]+=Right;
 }
