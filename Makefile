@@ -28,7 +28,7 @@ endif
 ifeq ($(P),unix)
 	CFLAGS= $(OPTFLAGS) $(shell sdl-config --cflags) $(shell pkg-config --cflags gtk+-2.0) -export-dynamic -DGTK -DUSE_MENCODER -Imast -Idoze -Ilibmencoder -D__cdecl= -D__fastcall= 
 else ifeq ($(P),win)
-	CFLAGS= $(OPTFLAGS) -DUSE_VFW -mno-cygwin -Imast -Idoze -Imaster -Iextra -Izlib -Ilibvfw
+	CFLAGS= $(OPTFLAGS) -DUSE_VFW -Imast -Idoze -Imaster -Iextra -Izlib -Ilibvfw
 endif
 
 ifndef Z80
@@ -84,7 +84,7 @@ else ifeq ($(P),win)
 	ENCODER_OBJ = tools/wdegavi.o tools/degavirc.o
 	ENCODER_LIBS = libvfw/libvfw.a
 	ENCODER_LDFLAGS = -lcomdlg32 -lvfw32 -lmsacm32 -lole32 -lm -Wl,--subsystem,windows
-	EXTRA_LDFLAGS = -specs=$(shell pwd)/specs -mno-cygwin
+	EXTRA_LDFLAGS = -mno-cygwin
 	GUI_LDFLAGS = -Wl,--subsystem,windows
 	SPECS = specs
 	PYTHON_PREFIX = /home/peter/pytest/winpython
